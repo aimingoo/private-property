@@ -49,7 +49,7 @@ function Object_getOwnPropertyDescriptors(O) {
 
 // disable write scope for user code
 // https://tc39.github.io/ecma262/#sec-validateandapplypropertydescriptor
-function ValidateAndApplyPropertyDescriptor ( O, P, extensible, Desc, current )
+function ValidateAndApplyPropertyDescriptor (O, P, extensible, Desc, current) {
   // Assert Desc has not a [[Scope]] field
   // (OR?) Assert Desc[[Scope]] is either 'public' or null
 }

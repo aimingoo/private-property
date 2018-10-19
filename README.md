@@ -166,6 +166,14 @@ var more = new ClassEx;
 obj.test(more);
 ```
 
+Run in console with nodejs: 
+
+```bash
+> node example.js
+200
+in instances, #data is Hello World!
+```
+
 And you can find a bigger example in the repo. ^^.
 
 

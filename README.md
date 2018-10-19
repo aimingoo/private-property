@@ -222,7 +222,7 @@ Token `,` is list separator for all of define, arguments, array and records, etc
 
 1. Internal slot [[HomeObject]] is ECMAScript component and initialzation by MakeMethod in ClassConstructor or ObjectCreate process.
 2. AClass.prototype is readonly.
-3. You can‘t get privateKey's symbol, so cant access it in property. all private/protected properies is not allow enumerate, because has `[[Scope]]` attribute in his PropertyDescriptor.
+3. You can‘t get privateKey's symbol, so cant access it as own property. all private/protected property is not allow enumerate, because has `[[Scope]]` attribute in his PropertyDescriptor with value 'private' or 'protecte'.
 4. `#` has no effect on existing attribute operations, and context limited.
 5. `super` is okay, so, ...
 

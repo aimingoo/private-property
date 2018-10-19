@@ -123,7 +123,7 @@ class f {
 
 ## Implementation
 
-@see example.js:
+@see [example.js](private-property/example.js):
 
 * **STEP1: MAP PRIVATE PROPERTIES**
   Create a `name->privateKey` map and put it to prototype's [[PrivateKeys]] internal slot. and, register all `name/value pair` as a initializer.

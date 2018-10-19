@@ -123,7 +123,7 @@ class f {
 
 ## Implementation
 
-@see [example.js](private-property/example.js):
+@see [example.js](example.js):
 
 * **STEP1: MAP PRIVATE PROPERTIES**
   Create a `name->privateKey` map and put it to prototype's [[PrivateKeys]] internal slot. and, register all `name/value pair` as a initializer.
@@ -143,7 +143,7 @@ class f {
 
   > NOTE: Similarly, `super` and `eval` and arrow functions also use ThisEnvironment.
 
-Ok. please read the source code, which will demonstrate how to implement the example below:
+Ok. please read the source code, which will demonstrate how to implement the example below ([Source code](example.js)):
 
 ```java
 class ClassEx {

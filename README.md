@@ -2,229 +2,270 @@
 
 
 
-The goal of this proposal is to replace the highly controversial  old proposal "proposal-class-fields". The new proposal with a concise implementation and aims to propose and accomplish the following objectives:
+The goal of this proposal is to replace the highly controversial  old proposal "proposal-class-fields"(@[here](https://github.com/tc39/proposal-class-fields)).
+
+The new proposal with a concise implementation and aims to propose and accomplish the following objectives:
 
 * No Fields!
   No new components into the ECMAScript specification.
-* Friendly syntax and concepts, predictable design.
-  Concept `private property` are compatible with Current ECMAScript spec.
+  
+* Syntax beautiful, and friendly concepts, predictable design.
+  Concept `private property` are current ECMAScript spec compatibled.
 
 * Easy to implement.
+
+  And makes it easy to implement the `protected` and `public`.
+
 * Less changes.
 
+  Simple first!
 
 
-> **NOTE:** HOW TO deliver this to TC39 proposals? 
+
+The proposal is not tc39 formal now.
+
+
+
+## Syntax design
+
+
+
+**1. define private property in class definition and object literals** 
+
+Use `private` as qualifier to definition property. The syntax is:
+
+   * \<**private**\> \[**static**\] *name* \[**=** *value*\] \[, …\]			
+   * \<**private**\> \[**static**\] \[**get** | **set**\] *methodName* **(** *argumentsList* **)** **{** … **}**			
+
+> NOTE1: Why use `private` qualifier, not `#`  prefix or sigil? [here](#faq)
 >
-> The proposal is not tc39 formal, Because I am not "members of TC39 or  ... registered via Ecma International", and the [registered](https://tc39.github.io/agreements/contributor) form is invalid always after press submit. 
+> NOTE2: Support async and generator methods.
 
+The  `protected` and `public` are activation now. at [here](#completed-and-planning).
 
-
-## Syntax
-
-**1. define property in class definition**
+Examples:
 
 ```java
-// The syntax declaration is similar to ObjectLiteral definition 
-class f {
-    // properties
-    data: 100,
-    static data: 200,
-
-    // methods
-    foo() {
-        ...
-    }
-}
-```
-
-by default, public properties define equal next steps:
-
-```javascript
-// for instances
-//   - data: 100
-f.prototype.data = 100;
-
-// for class
-//   - static data: 200
-f.data = 200;
-```
-
-> NOTE1: Why is `:` not `=`?  [here](#faq)
->
-> NOTE2: Why is `,` not `;`?  [here](#faq)
-
-
-
-**2. define private property in class and object definition**
-
-```java
-// in class definition
+// property define in class syntax
+// (NOTE: `private` use statement syntax, similar to `var`)
 class f {
     // private property for per-instances
-    private data: 100,
+    private data = 100;
     // private property for class
-    private static data: 200
+    private static data = 200;
+    // declaration list (maybe)
+    private x, y, z = 100;
+
+    ...
 }
 
-// in object definition
-// (NOTE: `get` or `set` is qualifier of accessor, `private` too.)
+// method and accessor define in class syntax
+class f {
+    private get data() { ... };
+    private foo() { ... };
+ 
+    // for static ...
+    ... 
+}
+
+// in object literal definition
 obj = {
     // `private` is qualifier
-    private data: 100,
-    private data,
-    private get data() { ... }
+    private data1: 100,
+    private data2,
+    private get data3() { ... },
+
     // normal
-    data: 100,
-    data,
-    get data() { ... }
+    data1: 100,
+    ...
 }
 ```
 
-> NOTE3: Why is `private` as qualifier, not `#` as prefix or sigil? [here](#faq)
 
 
+**2. access privated properties**
 
-**3. method is property, so `private` is allow**
+Read property reference as name without `this`:
 
 ```java
 class f {
-    private foo() { ... }
-    private static foo() { ... }
-}
-
-obj = {
-    private get foo() { ... }
+	private x;
+  foo() {
+    console.log(x); // accept
+  }
 }
 ```
+Or publish it:
 
-
-
-**4. access privated properties**
-
-> NOTE: The `#` is an operator and context limited, only used in methods.
+> NOTE3: Simple publish private property with `public` definition, Ex: `public as x`.
 
 ```java
-class f {
-	private data,
-    private static data: new Object,
-    foo(x) {
-        this#data = 100; // standard syntax
-        #data = 100;     // unary operator, equ this#data
-        #data = x#data;  // allow when x is instanceof f
-    }
-    static foo(x) {
-        console.log(#data == f#data); // true 
-        console.log(#data == this#data); // true, when this is f()
-        console.log(#data == x#data); // true, when x is f()
-    }
+// ex: publish with same name
+class MyClass {
+  private x = 100;
+  get x() {  // accept
+    return x;
+  }
 }
+a = new MyClass;
+console.log(a.x); // 100
 ```
+
+
+
+## Concepts
+
+The private property is object instance's private member, it define in class definition and object literals. Normal property is public member and published. They are different  member of private and public scope of object instance.
+
+Private property can only be accessed in method of class and object of them definition lexical. For classes inheritance tree, it's non-inherited and invisible. In runtime, Private scope is a ObjectEnvironment create by `[[Private]]` internal solt of its home object, that is method's `[[HomeObject]]`. All method running in this environment, but the read-write operations happen on the `[[Private]]` internal solt of the instance self.
+
+> NOTE4: Object environment is safe at here. @see [here](#faq)
+
+
+Protected property define in private scope too, but it's inherited and visible. @see [here](#completed-and-planning)
+
+
 
 ## Implementation
 
-@see [example.js](example.js):
+Core rules:
 
-* **STEP1: MAP PRIVATE PROPERTIES**
-  Create a `name->privateKey` map and put it to prototype's [[PrivateKeys]] internal slot. and, register all `name/value pair` as a initializer.
+- Identifier resolve  by name of private property but internal access will use private symbol key.
+- `AClass.prototype` and `AClass` has `[[Private]]` and `[[Protected]]` when them created at *ClassDefinitionEvaluation* phase, but a instance has `[[Private]]` only when it create by `new AClass()`.
 
-  * solution1: add to prototype as Initialized property;
-  * solution2: add to [[PrivateKeys]] table as PrivateKey record.
+Implementation steps:
 
-  Complete MAP process on Class/ObjectLiteral initialization.
+* IsPrivateEnvironment(env)
 
-* **STEP2: PUT PRIVATE PROPERTIES**
-  Use `privateKey/value pair` as private properties add to instanceo of Class.
-  Complete PUT process on class's constructor phase.
+  If ObjectEnvironment create by `[[Private]]` object, Return true,
+  
+  Else Return false.
+  
+* in ClassDefinitionEvaluation
 
-* **STEP3: GET PRIVATE PROPERTIE**
-  Use `x#name` syntax to access private property, put `method.[[HomeObject]]` and `x` as arguments, the `method` is `current active function` of ThisEnvironment always.
-  The `#` is context limited operator, similar to`super`. 
+  For each `private ...` defines, create properties at `AClass.prototype.[[Private]]` by name with a symbol as value. next, create a property use this symbol as key, its value from define statement. 
+  
+* before call OrdinaryCallBindThis() in [[Construct]] of Function Objects
 
-  > NOTE: Similarly, `super` and `eval` and arrow functions also use ThisEnvironment.
+  `obj.[[Private]] = Object.create(AClass.prototype.[[Private]]);`
 
-Ok. please read the source code, which will demonstrate how to implement the example below ([Source code](example.js)):
+* in [[Call]] of ECMAScript Function Objects
 
-```java
-class ClassEx {
-  private data: 200,
+  If `F.[[HomeObject]]` is present, let *env* be NewObjectEnvironment with `F.[[HomeObject]].[[Private]]`, and set `env.withEnvironment` to true, `env.privateBase` to `this`.
 
-  private foo() {
-    console.log("in instances,", '#data is ' + #data);
-  }
+  Set the outer lexical environment reference of current-environment to *env*.
 
-  test(x) {
-    console.log(#data);
-    x#data = 'Hello World!';
-    x#foo();
-  }
-}
+* rename IsSuperReference() to IsSuperOrPrivateReference();
 
-// testcases
-var obj = new ClassEx;
-var more = new ClassEx;
-obj.test(more);
-```
+* in GetIdentifierReference()
+  If IsPrivateEnvironment(*env*), set `ref.thisValue` to `env.privateBase` when resolved binding `ref`.
 
-Run in console with nodejs: 
+* in GetValue(V)
 
-```bash
-> node example.js
-200
-in instances, #data is Hello World!
-```
+  Let *env* be `GetBase(V)`.
 
-And you can find a bigger example in the repo. ^^.
+  If IsPrivateEnvironment(*env*), let *thisObject* be GetThisValue(V), let *privateSymbol* be resolved value in *env*.WithBaseObject()  with GetReferencedName(*env*).
 
+  Return *thisObject*.[[Private]].[[Get]]\(*privateSymbol*, *thisObject*\).
+
+* in PutValue(V, W)
+
+  Let *env* be `GetBase(V)`.
+  
+  If IsPrivateEnvironment(*env*), let *thisObject* be GetThisValue(V), let *privateSymbol* be resolved value in *env*.WithBaseObject()  with GetReferencedName(*env*).
+  
+  Let *x* be resolved descriptor in *env*.WithBaseObject()  with *privateSymbol*, and let *parent* be resolved object.
+  
+  * If *privateSymbol* is not ownKey of *thisObject*.[[Private]]
+    * If x is not reference descriptor, add a new data descriptor to *thisObject*.[[Private]] with value W.
+    * Else call *parent*.[[Set]]\(*privateSymbol*, W, *thisObject*\)
+  
+  * Else let *parent* be *thisObject*.[[Private]], *x* be descriptor of *parent*.[*privateSymbol*]. and
+    * If x is not reference descriptor, call *parent*.[[Set]]\(*privateSymbol*, W, *parent*\)
+    * Else call *parent*.[[Set]]\(*parentSymbol*, W, *thisObject*\)
+
+Done.
+
+> NOTE5: Set `env.withEnvironment` to true because it will be used when implementing the protected property.
+>
+> NOTE6: Maybe, A method can support the immutable binding objectEnvironment created with its [[HomeObject]] in MakeMethod(). But if *env* is immutable, then you cannot use `env.privateBase` to pass thisArgument. The good thing is that you don't need to modify the [[call]] internal method to support the runtime dynamic insertion of the objectEnvironment.
+>
+> NOTE7: (Continue note6,) If not use `env.privateBase`, we can resolve `this` object from call stack similar to a SuperPropertyReference.
+
+## Implementation for ObjectLiteral
+
+Limit rules:
+
+* not support `protected`.
+* not support `private as`.
+
+Implementation steps:
+
+* Set empty private object after ObjectCreate() for the literal `obj`：
+  `obj.[[Private] = Object.create(null) `
+* Create all private properties and methods at `obj.[[Private]]` when PropertyDefinitionEvaluation().
+
+Done.
 
 
 ## Completed and planning
 
 - [x] Class definition
 - [x] Object Literal definition(Object Initializer)
-- [ ] protect property, with override, support super#data (maybe?)
-- [ ] destructuring assignment
+- [ ] protected property, with override
+  - [ ] support super call (maybe)
+- [ ] destructuring assignment (maybe)
+- [ ] declaration list (maybe)
 - [x] same name normal property
 - [x] in eval()
 - [x] in arrow functions
 - [x] in get/setter methods
-- [-] in inner other function type
+- [x] in inner other function type
 
 
 
 ## FAQ
 
-* Why is `:` not `=` ?
-
-Token `:` is separator of object `key/value pair`, and ObjectLiteral definition is already the case, why not?
-
-> NOTE: the syntax `data: String = 'aabb'` is ok in TypeScript. In the case, the `:` used by type declare, so `=` as data define. JavaScript don't need that.
-
-
-
-* **Why is `,` not `;`?**
-
-Token `,` is list separator for all of define, arguments, array and records, etc. So, obviously it should be `,`.
-
-> NOTE: `;`  is statement separator.
-
-
-
-* **Why is `private` as qualifier, not `#` as prefix or sigil?**
+* **Why use `private` as qualifier, not `#` prefix or sigil?**
 
 `sigil + sigil + sigil + sigil + sigil == Readability * 2**-5`
 
 `prefix + prefix + prefix + prefix + prefix == Readability * 2**(-5*2)`
 
+and，If use  `#` character,  we may not be able to design the syntax of protected property.
+
 
 
 * **Why is `private property` is safe and feasible?**
 
-1. Internal slot [[HomeObject]] is ECMAScript component and initialzation by MakeMethod in ClassConstructor or ObjectCreate process.
+1. Internal slot `[[HomeObject]]` is ECMAScript component and initialzation by MakeMethod in ClassConstructor or ObjectCreate process.
+
+   For methods, the `[[HomeObject]]` is immutable, so using `HomeObject.[[Private]]` to create `ObjectEnvironment` will get a definite context.
+
 2. AClass.prototype is readonly.
-3. You can‘t get privateKey's symbol, so cant access it as own property. all private/protected property is not allow enumerate, because has `[[Scope]]` attribute in his PropertyDescriptor with value 'private' or 'protecte'.
-4. `#` has no effect on existing attribute operations, and context limited.
-5. `super` is okay, so, ...
+
+   So object instances can always get a valid private property chain from his internal slot, without being affected by behavior like `Object.setPrototypeOf(aClass.prototype, ...)`.
+
+3. ObjectEnvironment is safe in the static context of non-public object instance.
+
+   No one can get the host instance for this ObjectEnvironment, so this environment is static and secure, and there is no identifier ambiguity or violates lexical scope similar to the use of the `with` statement. @see Eich's point of view: [Violates lexical scope for `with` statement](http://2ality.com/2011/06/with-statement.html).
+
+
+
+## Testcases
+
+The proposal has full test case in repository, current syntax based.
+
+```bash
+# install test framework
+> mkdir node_modules
+> npm install fancy-test chai mocha --no-save
+# test it
+> mocha
+
+# (OR)
+> bash run.sh
+```
 
 
 
@@ -239,3 +280,4 @@ Token `,` is list separator for all of define, arguments, array and records, etc
 ## History
 
 2018.10.19 initial release.
+2019.07.29 new solution release.

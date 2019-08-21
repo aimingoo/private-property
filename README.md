@@ -22,7 +22,9 @@ The new proposal with a concise implementation and aims to propose and accomplis
 
 
 
-The proposal is not tc39 formal now.
+The proposal is not tc39 formal now. but have a implement at [prepack-core with proposal-private-property](https://github.com/aimingoo/prepack-core/tree/proposal-private-property) ([@here](https://github.com/aimingoo/prepack-core/tree/proposal-private-property)).
+
+You can try testcase in current project ([@here](#testcases)).
 
 
 
@@ -128,12 +130,12 @@ Protected property define in private scope too, but it's inherited and visible. 
 
 ## Implementation
 
-Core rules:
+**Core rules:**
 
 - Identifier resolve  by name of private property but internal access will use private symbol key.
 - `AClass.prototype` and `AClass` has `[[Private]]` and `[[Protected]]` when them created at *ClassDefinitionEvaluation* phase, but a instance has `[[Private]]` only when it create by `new AClass()`.
 
-Implementation steps:
+**Implementation steps:**
 
 * IsPrivateEnvironment(env)
 
@@ -183,6 +185,18 @@ Implementation steps:
   * Else let *parent* be *thisObject*.[[Private]], *x* be descriptor of *parent*.[*privateSymbol*]. and
     * If x is not reference descriptor, call *parent*.[[Set]]\(*privateSymbol*, W, *parent*\)
     * Else call *parent*.[[Set]]\(*parentSymbol*, W, *thisObject*\)
+
+Done.
+
+**Implementation in constructor method:**
+
+- in SuperCall()
+
+  Update result.[[Private]] to newTarget.prototype.[[Private]] after constuct from parent's constructor() method. and, the result must be instanceof newTarget.
+
+- in [[Call]] of ECMAScript Function Objects
+
+  Accept when thisArgument is null when bind object to private scope.
 
 Done.
 

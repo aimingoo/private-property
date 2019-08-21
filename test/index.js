@@ -47,3 +47,33 @@ describe("Simple object literal", ()=> {
 		expect(output.stdout).to.eql('300\n');
 	});
 });
+
+describe("Constructor method", ()=> {
+	fancy.stdout().
+	it('Normal non extends constructor', output => {
+		execute(`
+			class MyClass {
+				private x = 400;
+				constructor() {
+					console.log(x);
+				}
+			}
+			new MyClass;
+		`);
+		expect(output.stdout).to.eql('400\n');
+	});
+	fancy.stdout().
+	it('Normal extends constructor', output => {
+		execute(`
+			class MyClass extends Object {
+				private x = 500;
+				constructor() {
+					super();
+					console.log(x);
+				}
+			}
+			new MyClass;
+		`);
+		expect(output.stdout).to.eql('500\n');
+	});
+});

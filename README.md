@@ -91,7 +91,7 @@ Read property reference as name without `this`:
 
 ```java
 class f {
-	private x;
+  private x;
   foo() {
     console.log(x); // accept
   }

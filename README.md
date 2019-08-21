@@ -279,5 +279,8 @@ The proposal has full test case in repository, current syntax based.
 
 ## History
 
-2018.10.19 initial release.
+2019.08.21 first version of implement solution.
+
 2019.07.29 new solution release.
+
+2018.10.19 initial release.

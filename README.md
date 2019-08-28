@@ -39,15 +39,15 @@ Use `private` as qualifier to definition property. The syntax is:
    * \<**private**\> \[**static**\] *name* \[**=** *value*\] \[, …\]			
    * \<**private**\> \[**static**\] \[**get** | **set**\] *methodName* **(** *argumentsList* **)** **{** … **}**			
 
-> NOTE1: Why use `private` qualifier, not `#`  prefix or sigil? [here](#faq)
+> NOTE: Why use `private` qualifier, not `#`  prefix or sigil? [here](#faq)
 >
-> NOTE2: Support async and generator methods.
+> NOTE: Support async and generator methods.
 
 The  `protected` and `public` are activation now. at [here](#completed-and-planning).
 
 Examples:
 
-```java
+```javascript
 // property define in class syntax
 // (NOTE: `private` use statement syntax, similar to `var`)
 class f {
@@ -87,9 +87,11 @@ obj = {
 
 **2. access privated properties**
 
-Read property reference as name without `this`:
+Read reference using *identifier* or *propertyName* without `this`:
 
-```java
+* **Identifier**: *IdentifierName* but not *ReservedWord*.
+
+```javascript
 class f {
   private x;
   foo() {
@@ -97,11 +99,37 @@ class f {
   }
 }
 ```
+Access private scope with his instances:
+
+* \<**internal**\> **private** *name*...
+  set `internal` prefix modifier when class private member definition.
+* *instance*\[**internal**.*name*\]
+  the syntax same of computed property.
+
+> NOTE: _the implement of conceptual syntax `(private this).x`, informal suggest._
+>
+> NOTE: *as a conceptual depiction, the `x` equ `(private this).x`.*
+
+```javascript
+class MyClass {
+  internal private x;
+
+  compare(b) {
+    return x === b[internal.x];
+  }
+
+  static compare(a, b) {
+    return a[internal.x] === b[internal.x];
+  }
+}
+```
+
 Or publish it:
 
-> NOTE3: Simple publish private property with `public` definition, Ex: `public as x`.
+> NOTE: Simple publish private property with normal class definition.
+> *(Maybe extended to  `public as x`.)*
 
-```java
+```javascript
 // ex: publish with same name
 class MyClass {
   private x = 100;
@@ -121,10 +149,20 @@ The private property is object instance's private member, it define in class def
 
 Private property can only be accessed in method of class and object of them definition lexical. For classes inheritance tree, it's non-inherited and invisible. In runtime, Private scope is a ObjectEnvironment create by `[[Private]]` internal solt of its home object, that is method's `[[HomeObject]]`. All method running in this environment, but the read-write operations happen on the `[[Private]]` internal solt of the instance self.
 
-> NOTE4: Object environment is safe at here. @see [here](#faq)
+> NOTE: Object environment is safe at here. @see [here](#faq)
 
 
 Protected property define in private scope too, but it's inherited and visible. @see [here](#completed-and-planning)
+
+
+
+### Conceptual syntax of private access
+
+The `(private a).x` is syntax to depiction private scope access procedure of instances `a`, the procedure will return value of private member `x` of  `a`.
+
+The concept restricts `(private a).x` to be used only for prototype methods or static methods in class declarations, and only allows it to access the private domain of instances of the class in the context of the above methods.
+
+>  NOTE: *The `obj.#x` grammar is a implement of the conceptual syntax, because it is equivalent to `(private obj).x`.*
 
 
 
@@ -200,11 +238,11 @@ Done.
 
 Done.
 
-> NOTE5: Set `env.withEnvironment` to true because it will be used when implementing the protected property.
+> NOTE: Set `env.withEnvironment` to true because it will be used when implementing the protected property.
 >
-> NOTE6: Maybe, A method can support the immutable binding objectEnvironment created with its [[HomeObject]] in MakeMethod(). But if *env* is immutable, then you cannot use `env.privateBase` to pass thisArgument. The good thing is that you don't need to modify the [[call]] internal method to support the runtime dynamic insertion of the objectEnvironment.
+> NOTE: Maybe, A method can support the immutable binding objectEnvironment created with its [[HomeObject]] in MakeMethod(). But if *env* is immutable, then you cannot use `env.privateBase` to pass thisArgument. The good thing is that you don't need to modify the [[call]] internal method to support the runtime dynamic insertion of the objectEnvironment.
 >
-> NOTE7: (Continue note6,) If not use `env.privateBase`, we can resolve `this` object from call stack similar to a SuperPropertyReference.
+> NOTE: (Continue note6,) If not use `env.privateBase`, we can resolve `this` object from call stack similar to a SuperPropertyReference.
 
 ## Implementation for ObjectLiteral
 

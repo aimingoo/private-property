@@ -31,7 +31,7 @@ You can try testcase in current project ([@here](#testcases)).
 Table of Contents
 =================
 
-* [The Private property proposal](#property-in-class-and-object-definition)
+* [The private-property proposal](#property-in-class-and-object-definition)
   * [Syntax design](#syntax-design)
   * [Concepts](#concepts)
     * [Conceptual syntax of private access](#conceptual-syntax-of-private-access)

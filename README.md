@@ -7,9 +7,11 @@ The goal of this proposal is to replace the highly controversial  old proposal "
 The new proposal with a concise implementation and aims to propose and accomplish the following objectives:
 
 * No Fields!
+
   No new components into the ECMAScript specification.
   
 * Syntax beautiful, and friendly concepts, predictable design.
+
   Concept `private property` are current ECMAScript spec compatibled.
 
 * Easy to implement.
@@ -31,18 +33,21 @@ You can try testcase in current project ([@here](#testcases)).
 Table of Contents
 =================
 
-* [The private-property proposal](#property-in-class-and-object-definition)
+* [Property in class and object definition](#property-in-class-and-object-definition)
+* [Table of Contents](#table-of-contents)
   * [Syntax design](#syntax-design)
   * [Concepts](#concepts)
     * [Conceptual syntax of private access](#conceptual-syntax-of-private-access)
+    * [Internal access privilege](#internal-access-privilege)
   * [Implementation](#implementation)
-  * [Implementation for ObjectLiteral](#implementation-for-objectliteral)
+    * [<strong>Implementation for constructor method</strong>](#implementation-for-constructor-method)
+    * [Implementation for IAP](#implementation-for-iap)
+    * [Implementation for object literal](#implementation-for-object-literal)
   * [Completed and planning](#completed-and-planning)
   * [FAQ](#faq)
   * [Testcases](#testcases)
   * [References](#references)
   * [History](#history)
-
 
 
 ## Syntax design
@@ -54,6 +59,7 @@ Table of Contents
 Use `private` as qualifier to definition property. The syntax is:
 
    * \<**private**\> \[**static**\] *name* \[**=** *value*\] \[, …\]			
+
    * \<**private**\> \[**static**\] \[**get** | **set**\] *methodName* **(** *argumentsList* **)** **{** … **}**			
 
 > NOTE: Why use `private` qualifier, not `#`  prefix or sigil? [here](#faq)
@@ -119,8 +125,11 @@ class f {
 Access private scope with his instances:
 
 * \<**internal**\> **private** *name*...
+
   set `internal` prefix modifier when class private member definition.
+
 * *instance*\[**internal**.*name*\]
+
   the syntax same of computed property.
 
 > NOTE: _the implement of conceptual syntax `(private this).x`, informal suggest._
@@ -179,7 +188,18 @@ The `(private a).x` is syntax to depiction private scope access procedure of ins
 
 The concept restricts `(private a).x` to be used only for prototype methods or static methods in class declarations, and only allows it to access the private domain of instances of the class in the context of the above methods.
 
->  NOTE: *The `obj.#x` grammar is a implement of the conceptual syntax, because it is equivalent to `(private obj).x`.*
+>  NOTE: *the `obj.#x` grammar is a implement of the conceptual syntax, because it is equivalent to `(private obj).x`.*
+
+
+
+### Internal access privilege
+
+Can read/write private scope of instances  in them class, this is called Internal Access Privilege or IAP. For IAP, hard define / explicit indication are necessary, although not in some languages. Because current proposal base on  these principles:
+
+  * not possible to access a private member of an object when his Class unaware. so,
+  * not possible to directly access private scope outside of the Class declaration.
+
+> NOTE: *using `internal` prefix to set IAP of private property, and use `intenal.x` to reference it.*
 
 
 
@@ -190,7 +210,7 @@ The concept restricts `(private a).x` to be used only for prototype methods or s
 - Identifier resolve  by name of private property but internal access will use private symbol key.
 - `AClass.prototype` and `AClass` has `[[Private]]` and `[[Protected]]` when them created at *ClassDefinitionEvaluation* phase, but a instance has `[[Private]]` only when it create by `new AClass()`.
 
-**Implementation steps:**
+**Key implementation steps:**
 
 * IsPrivateEnvironment(env)
 
@@ -243,7 +263,18 @@ The concept restricts `(private a).x` to be used only for prototype methods or s
 
 Done.
 
-**Implementation in constructor method:**
+
+> NOTE: Set `env.withEnvironment` to true because it will be used when implementing the protected property.
+>
+> NOTE: Maybe, A method can support the immutable binding objectEnvironment created with its [[HomeObject]] in MakeMethod(). But if *env* is immutable, then you cannot use `env.privateBase` to pass thisArgument. The good thing is that you don't need to modify the [[call]] internal method to support the runtime dynamic insertion of the objectEnvironment.
+>
+> NOTE: (Continue note6,) If not use `env.privateBase`, we can resolve `this` object from call stack similar to a SuperPropertyReference.
+
+
+
+### **Implementation for constructor method**
+
+Implementation steps:
 
 - in SuperCall()
 
@@ -255,13 +286,44 @@ Done.
 
 Done.
 
-> NOTE: Set `env.withEnvironment` to true because it will be used when implementing the protected property.
->
-> NOTE: Maybe, A method can support the immutable binding objectEnvironment created with its [[HomeObject]] in MakeMethod(). But if *env* is immutable, then you cannot use `env.privateBase` to pass thisArgument. The good thing is that you don't need to modify the [[call]] internal method to support the runtime dynamic insertion of the objectEnvironment.
->
-> NOTE: (Continue note6,) If not use `env.privateBase`, we can resolve `this` object from call stack similar to a SuperPropertyReference.
 
-## Implementation for ObjectLiteral
+### Implementation for IAP
+
+Limit rules:
+
+- `internal` is explicit indication for private members, ex: `internal private x = 100;` . That will lead to a name/value pair `x: true` put into private property  `internal` when ClassDefinitionEvaluation
+- `internal.x` will get a reference of private key of instance, but can't access value using that key
+-  `a[internal.x]` will access private scope and read/write private value of instance `a` with its private key `internal.x`, these are equ conceptual syntax `(private a).x`
+
+Implementation steps:
+
+* in ClassDefinitionEvaluation
+
+  Let`internals` be a new Object, set `internals.[[isInternal]]` to true, and let `AClass.prototype.[[Internal]]` to be `internals`. Next, for each `internal private ...` defines, create properties at `AClass.prototype.[[Internal]]` by his name with `true` value.
+
+* when member access of evaluation MemberExpression with computed property expression (es6id: 12.3.2.1)
+
+  > NOTE: the action will try r/w using reference of `a[internal.x]`, at this time, `inernal.x` is a computed *propertyNameReference*, so the `a[internal.x]` syntax is alone syntax struct, no other dependences and will return a result of him.
+
+  Let `baseValue` be GetValue(baseReference), the baseReference is result of evaluating *MemberExpression*. ex: that is 'a' of `a[internal.x]`.
+
+  Let `isInternal` be true when *propertyNameReference* is a object reference of `[[internal]]`, else false. Return direct value of propertyName `internal.x` of object `a` when `isInternal` is not true.
+  
+  Let `base` be current method's [[HomeObject]] value, if method is static, then let to be `[[HomeObject]].prototype`.
+  
+  Let `privateName` be GetReferenceName(*propertyNameReference*). ex: that is 'x' of `internal.x`.
+  
+  Let `privateEnv` be a new ObjectEnvironmentRecord create from `base.$Private`. about his attributes, set privateBase be `baseVale`, and withEnvironment to be `true`. and outer of privateEnv is null.
+  
+  Return a new Reference, his `base` is privateEnv, name is privateName.
+  
+  > NOTE: assert: The new reference is a PrivateReference.
+  >
+  > NOTE: The privateEnv can cached for each `base.$Private`.
+
+Done.
+
+### Implementation for object literal
 
 Limit rules:
 
@@ -275,6 +337,8 @@ Implementation steps:
 * Create all private properties and methods at `obj.[[Private]]` when PropertyDefinitionEvaluation().
 
 Done.
+
+
 
 
 ## Completed and planning
@@ -347,6 +411,8 @@ The proposal has full test case in repository, current syntax based.
 
 
 ## History
+
+2019.09.01 IAP Implemented.
 
 2019.08.21 first version of implement solution.
 

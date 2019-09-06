@@ -205,6 +205,8 @@ Can read/write private scope of instances  in them class, this is called Interna
 
 ## Implementation
 
+### Main processes
+
 **Core rules:**
 
 - Identifier resolve  by name of private property but internal access will use private symbol key.
@@ -345,7 +347,7 @@ Done.
 
 - [x] Class definition
 - [x] Object Literal definition(Object Initializer)
-- [ ] protected property, with override
+- [x] protected property, with override
   - [ ] support super call (maybe)
 - [ ] destructuring assignment (maybe)
 - [ ] declaration list (maybe)

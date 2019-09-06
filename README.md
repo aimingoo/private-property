@@ -247,6 +247,8 @@ Can read/write private scope of instances  in them class, this is called Interna
 
   Return *thisObject*.[[Private]].[[Get]]\(*privateSymbol*, *thisObject*\).
 
+  > Note: Return the value of `baseObject.[[Private]].x` first when *thisObject* is subclass instance of [[HomeObject]] of current method and *thisObject* has not name `x`.
+
 * in PutValue(V, W)
 
   Let *env* be `GetBase(V)`.

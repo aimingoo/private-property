@@ -79,7 +79,44 @@ describe("Constructor method", ()=> {
 	});
 });
 
-describe("Private scope access", ()=> {
+describe("Subclass access", ()=> {
+	fancy.stdout().stderr().
+	it('Read default value', output => {
+		execute(`
+			class MyClass {
+				private x = 600;
+				foo() {
+					console.log(x);
+				}
+			}
+			class MyClassEx extends MyClass {}
+			(new MyClassEx).foo();
+		`);
+		expect(output.stdout).to.eql('600\n');
+	});
+
+	fancy.stdout().stderr().
+	it('Rewrite value', output => {
+		execute(`
+			class MyClass {
+				private x = 'default';
+				foo() {
+					console.log(x);
+				}
+				set x(v) {
+					x = v;
+				}
+			}
+			class MyClassEx extends MyClass {}
+			var obj = new MyClassEx;
+			obj.x = 'updated';
+			obj.foo();
+		`);
+		expect(output.stdout).to.eql('updated\n');
+	});
+});
+
+describe("Internal access", ()=> {
 	fancy.stdout().stderr().
 	it('In prototype method', output => {
 		execute(`

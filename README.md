@@ -184,11 +184,18 @@ Protected property define in private scope too, but it's inherited and visible. 
 
 ### Conceptual syntax of private access
 
-The `(private a).x` is syntax to depiction private scope access procedure of instances `a`, the procedure will return value of private member `x` of  `a`.
+The `(private a).x` is syntax to depiction private scope access procedure of instances `a`, It means,
+
+- The object `a` has a private scope and `x` is a member in the scope.
+- The conceptual syntax `(private a).x` must express as a reference about `x`, to read (rhs) and assignment(lhs).
 
 The concept restricts `(private a).x` to be used only for prototype methods or static methods in class declarations, and only allows it to access the private domain of instances of the class in the context of the above methods.
 
->  NOTE: *the `obj.#x` grammar is a implement of the conceptual syntax, because it is equivalent to `(private obj).x`.*
+The conceptual syntax only indicates the existence of the private scope of `a`, and does not express how the private scope is managed, and does not indicate that concept when above reference is passed to the outside (class, instance, or domain of other entities).
+
+> Note: The `obj.#x` grammar is a implement of the conceptual syntax, because it is equivalent to `(private obj).x` in the case where the private scope is own by object `a`. But if the private scope is part of a class's scope, it is not equivalent to `(private a).x`.
+
+> Note: That based on the understanding of prototype inheritance, `private property` interprets `member` as "property". Which is an implementation choice, and the conceptual syntax here does not assume that `x` is private "object properties".
 
 
 

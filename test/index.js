@@ -148,6 +148,30 @@ describe("Internal access", ()=> {
 	});
 });
 
+describe("Different from the general features", ()=> {
+	fancy.stdout().stderr().
+	it('Private scope is immediate (non-persistent) binding', output => {
+		execute(`
+			var x = "outer";
+			var f;
+
+			class MyClass{
+				private x = 100;
+				foo() {
+					f = ()=> {
+						console.log(x);
+					};
+					f();
+				}
+			}
+
+			(new MyClass).foo();
+			f();
+		`);
+		expect(output.stdout).to.eql('100\nouter\n');
+	});
+});
+
 describe("Hijack method", ()=> {
 	fancy.stdout().stderr().
 	it('Try same private name access', output => {
@@ -191,7 +215,6 @@ describe("Hijack method", ()=> {
 			var a = new MyClass;
 			b.foo.call(a);
 		`);
-		// expect(output.stderr.length).to.eql(0);
 		expect(output.stdout).to.eql('undefined\n');
 	});
 

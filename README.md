@@ -212,6 +212,26 @@ Can read/write private scope of instances  in them class, this is called Interna
 
 ## Implementation
 
+The solution include 3 key design.
+
+* First of all, this is a structure that achieves complete visibility, based on prototype inheritance, without a conceptual burden.
+
+  [![full visibility design base on prototype](wiki/images/th-Private-property-proposal-p1.png)](wiki/images/Private-property-proposal-p1.png)
+
+* Next, secure access is a simple private symbol exchange. It only needs 3 access rules to achieve.
+
+  [![private scope access with a "name->symbol->value" map](wiki/images/th-Private-property-proposal-p2.png)](wiki/images/Private-property-proposal-p2.png)
+
+* Finally, the visibility override (or overload) is the markup at @@unscopables. This only takes two steps.
+
+  [![visibility management for protected override base on @@unscopables](wiki/images/th-Private-property-proposal-p3.png)](wiki/images/Private-property-proposal-p3.png)
+
+In addition, for the implementation of the `(private a).x` syntax, pls refer to this:
+
+  [![Internal access between C.prototype and class C](wiki/images/th-Private-property-proposal-p4.png)](wiki/images/Private-property-proposal-p4.png)
+
+  > NOTE: Base on existing design of es6 class, the private domain (of instances and their class) is two separate, unconnected domains , which is why [[Internals]] is shared.
+
 ### Main processes
 
 **Core rules:**

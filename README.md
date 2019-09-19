@@ -212,7 +212,7 @@ Can read/write private scope of instances  in them class, this is called Interna
 
 ## Implementation
 
-The solution include 3 key design.
+The solution includes 3 key designs.
 
 * First of all, this is a structure that achieves complete visibility, based on prototype inheritance, without a conceptual burden.
 
@@ -442,6 +442,8 @@ The proposal has full test case in repository, current syntax based.
 
 
 ## History
+
+2019.09.19 architecture design published.
 
 2019.09.01 IAP Implemented.
 
